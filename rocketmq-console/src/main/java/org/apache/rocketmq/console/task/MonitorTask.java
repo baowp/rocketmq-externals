@@ -51,8 +51,8 @@ public class MonitorTask {
                 if (consumeInfo.getCount() < configEntry.getValue().getMinCount()) {
                     message += "\n消息者实例数" + consumeInfo.getCount() + "小于设置的报警阀值" + configEntry.getValue().getMinCount();
                 }
-                if(consumeInfo.getDiffTotal() > configEntry.getValue().getMaxDiffTotal()){
-                    message +="\n消息积压数"+consumeInfo.getDiffTotal()+"大于设置的报警阀值"+configEntry.getValue().getMaxDiffTotal();
+                if (consumeInfo.getDiffTotal() > configEntry.getValue().getMaxDiffTotal()) {
+                    message += "\n消息积压数" + consumeInfo.getDiffTotal() + "大于设置的报警阀值" + configEntry.getValue().getMaxDiffTotal();
                 }
                 DingService.getInstance().dingtalk(message);
             }
