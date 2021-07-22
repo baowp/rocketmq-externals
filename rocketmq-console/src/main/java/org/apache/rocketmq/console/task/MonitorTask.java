@@ -18,13 +18,16 @@ package org.apache.rocketmq.console.task;
 
 import java.util.Map;
 import javax.annotation.Resource;
+
 import org.apache.rocketmq.console.model.ConsumerMonitorConfig;
 import org.apache.rocketmq.console.model.GroupConsumeInfo;
 import org.apache.rocketmq.console.service.ConsumerService;
 import org.apache.rocketmq.console.service.MonitorService;
+import org.apache.rocketmq.console.util.DingService;
 import org.apache.rocketmq.console.util.JsonUtil;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.stereotype.Component;
 
 @Component
@@ -37,12 +40,21 @@ public class MonitorTask {
     @Resource
     private ConsumerService consumerService;
 
-//    @Scheduled(cron = "* * * * * ?")
+    @Scheduled(cron = "* */1 * * * ?")
     public void scanProblemConsumeGroup() {
         for (Map.Entry<String, ConsumerMonitorConfig> configEntry : monitorService.queryConsumerMonitorConfig().entrySet()) {
             GroupConsumeInfo consumeInfo = consumerService.queryGroup(configEntry.getKey());
             if (consumeInfo.getCount() < configEntry.getValue().getMinCount() || consumeInfo.getDiffTotal() > configEntry.getValue().getMaxDiffTotal()) {
-                logger.info("op=look consumeInfo {}", JsonUtil.obj2String(consumeInfo)); // notify the alert system
+                String consumeInfoJson = JsonUtil.obj2String(consumeInfo);
+                logger.info("op=look consumeInfo {}", consumeInfoJson); // notify the alert system
+                String message = consumeInfoJson;
+                if (consumeInfo.getCount() < configEntry.getValue().getMinCount()) {
+                    message += "\n消息者实例数" + consumeInfo.getCount() + "小于设置的报警阀值" + configEntry.getValue().getMinCount();
+                }
+                if(consumeInfo.getDiffTotal() > configEntry.getValue().getMaxDiffTotal()){
+                    message +="\n消息积压数"+consumeInfo.getDiffTotal()+"大于设置的报警阀值"+configEntry.getValue().getMaxDiffTotal();
+                }
+                DingService.getInstance().dingtalk(message);
             }
         }
     }
